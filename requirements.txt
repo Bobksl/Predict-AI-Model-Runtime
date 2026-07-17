@@ -1,0 +1,30 @@
+# Core scientific stack
+numpy
+pandas
+pyarrow            # parquet inventories
+scikit-learn       # grouped CV, metrics helpers
+scipy
+
+# Deep learning — GNN stack (PyTorch + PyTorch Geometric)
+# NOTE: install torch matching your CUDA/CPU build first (see pytorch.org),
+# then torch-geometric. Versions are intentionally unpinned here; pin them in
+# Phase 0 once the framework decision and hardware are fixed.
+torch
+torch-geometric
+
+# Training utilities
+tqdm
+pyyaml             # experiment configs
+matplotlib         # EDA figures
+
+# Data download
+kaggle
+
+# Testing
+pytest
+
+# ---- Documentation tooling (only needed to rebuild the PDFs) ----
+markdown
+pymdown-extensions
+pygments
+pypdfium2          # optional: rasterise PDFs for visual checks

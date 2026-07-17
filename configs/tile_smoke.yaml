@@ -1,0 +1,30 @@
+run_name: tile_smoke
+seed: 0
+data:
+  collection: tile:xla
+  k_configs: 6
+  batch_size: 4
+  num_workers: 0
+  add_reverse_edges: true
+  normalizer: artifacts/norm_stats.json
+  cache_dir: null
+  limit_files: 5
+model:
+  type: tile_sage
+  opcode_emb_dim: 32
+  hidden_dim: 64
+  n_layers: 3
+  config_proj_dim: 32
+  dropout: 0.1
+loss:
+  type: pairwise_hinge
+  margin: 0.1
+optim:
+  lr: 1.0e-3
+  weight_decay: 0.0
+  clip_norm: 0.5
+train:
+  max_epochs: 2
+  early_stop_patience: 5
+cv:
+  enabled: false

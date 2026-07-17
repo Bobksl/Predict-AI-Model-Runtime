@@ -1,0 +1,28 @@
+# Predict AI Model Runtime — Data Understanding Toolkit
+
+## Setup
+pip install -r requirements.txt
+
+## Download data (choose one)
+# Kaggle CLI:
+kaggle competitions download -c predict-ai-model-runtime -p ./data/raw --force
+unzip -o ./data/raw/predict-ai-model-runtime.zip -d ./data/raw/predict-ai-model-runtime
+
+# kagglehub:
+python -c "import kagglehub; kagglehub.competition_download('predict-ai-model-runtime', output_dir='./data/raw/predict-ai-model-runtime')"
+
+## Build inventory (file sizes, counts, schemas)
+python -m src.inventory --data_root ./data/raw/predict-ai-model-runtime --out ./artifacts/inventory.parquet
+
+## Run EDA (generates figures)
+python -m src.eda --inventory ./artifacts/inventory.parquet --out_dir ./artifacts/figures
+
+## Preprocess + cache
+python -m src.preprocess --data_root ./data/raw/predict-ai-model-runtime --cache_dir ./data/cache --out_stats ./artifacts/norm_stats.json
+
+## Unit tests
+pytest -q
+
+## Build PDF report
+# Option: Quarto
+quarto render report/report.qmd --to pdf

@@ -1,0 +1,29 @@
+# ---- Data (large; downloaded separately, never committed) ----
+data/
+*.npz
+*.zip
+
+# ---- Caches & generated artifacts ----
+cache/
+.cache/
+artifacts/checkpoints/
+artifacts/submissions/
+artifacts/figures/*.png
+*.parquet
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.venv/
+venv/
+
+# ---- OS / editor / local-only config ----
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
+
+# Keep empty scaffold dirs
+!**/.gitkeep
