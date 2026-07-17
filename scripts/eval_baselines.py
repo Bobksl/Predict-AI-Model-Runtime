@@ -23,12 +23,26 @@ from src.training.metrics import opa                            # noqa: E402
 import torch                                                    # noqa: E402
 
 
-def _load_pairs(files):
-    """Return list of (config_feat [c,24], y int64 [c]) per file."""
+MAX_CONFIGS = 256  # exact pairwise OPA is O(c^2); subsample large config lists
+
+
+def _load_pairs(files, seed=0):
+    """Return list of (config_feat [c',24], y int64 [c']) per file.
+
+    Configs are subsampled to MAX_CONFIGS with a fixed seed: full lists reach
+    ~20k configs and an exact [c,c] pair matrix at that size is ~3 GB. 256
+    configs give 32k pairs per graph — ample for a trivial-baseline estimate.
+    """
+    rng = np.random.default_rng(seed)
     out = []
     for f in files:
         b = read_bundle(str(f))
-        out.append((b["config_feat"].astype(np.float64), b["config_runtime"]))
+        cf = b["config_feat"].astype(np.float64)
+        y = b["config_runtime"]
+        if len(y) > MAX_CONFIGS:
+            idx = rng.choice(len(y), size=MAX_CONFIGS, replace=False)
+            cf, y = cf[idx], y[idx]
+        out.append((cf, y))
     return out
 
 
@@ -46,32 +60,46 @@ def random_baseline(pairs, seed=0):
     return float(np.mean(vals)) if vals else float("nan")
 
 
-def best_column_baseline(train_pairs, valid_pairs):
-    n_cols = train_pairs[0][0].shape[1]
-    best_col, best_sign, best_train_opa = None, 1, -1.0
-    for col in range(n_cols):
-        for sign in (1, -1):
-            vals = []
-            for cf, y in train_pairs:
-                if len(y) < 2:
-                    continue
-                s = sign * cf[:, col]
-                v = opa(torch.as_tensor(s), torch.as_tensor(y))
-                if not torch.isnan(v):
-                    vals.append(float(v))
-            m = float(np.mean(vals)) if vals else -1.0
-            if m > best_train_opa:
-                best_train_opa, best_col, best_sign = m, col, sign
+def _column_opas(pairs):
+    """Per-file-mean OPA for every (column, sign) ranker, vectorised.
 
-    vals = []
-    for cf, y in valid_pairs:
+    For each file builds the [c,c] label-sign matrix once and the [c,c,24]
+    score-sign tensor once, so all 48 rankers are evaluated in a single pass.
+    Same OPA definition as src.training.metrics: valid pairs are dy!=0; a
+    score-tie on a valid pair counts as discordant.
+    """
+    n_cols = pairs[0][0].shape[1]
+    sums_pos = np.zeros(n_cols)
+    sums_neg = np.zeros(n_cols)
+    n_files = 0
+    for cf, y in pairs:
         if len(y) < 2:
             continue
-        s = best_sign * cf[:, best_col]
-        v = opa(torch.as_tensor(s), torch.as_tensor(y))
-        if not torch.isnan(v):
-            vals.append(float(v))
-    valid_opa = float(np.mean(vals)) if vals else float("nan")
+        dy = np.sign(y[:, None] - y[None, :]).astype(np.int8)       # [c,c]
+        valid = dy != 0
+        n_valid = int(valid.sum())
+        if n_valid == 0:
+            continue
+        ds = np.sign(cf[:, None, :] - cf[None, :, :]).astype(np.int8)  # [c,c,24]
+        same = (ds == dy[:, :, None]) & valid[:, :, None]
+        opposite = (ds == -dy[:, :, None]) & valid[:, :, None]
+        sums_pos += same.sum(axis=(0, 1)) / n_valid
+        sums_neg += opposite.sum(axis=(0, 1)) / n_valid
+        n_files += 1
+    return sums_pos / n_files, sums_neg / n_files
+
+
+def best_column_baseline(train_pairs, valid_pairs):
+    opa_pos, opa_neg = _column_opas(train_pairs)
+    if opa_pos.max() >= opa_neg.max():
+        best_col, best_sign = int(np.argmax(opa_pos)), 1
+        best_train_opa = float(opa_pos[best_col])
+    else:
+        best_col, best_sign = int(np.argmax(opa_neg)), -1
+        best_train_opa = float(opa_neg[best_col])
+
+    v_pos, v_neg = _column_opas(valid_pairs)
+    valid_opa = float(v_pos[best_col] if best_sign == 1 else v_neg[best_col])
     return best_col, best_sign, best_train_opa, valid_opa
 
 
