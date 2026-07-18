@@ -21,8 +21,8 @@ contract in `docs/TEAM.md`).
 |---|---|---|---|
 | **P0** Foundation | Clean repo, stack decision, data audit | Fresh install runs; 5 collections on disk | ✅ **DONE** |
 | **P1** Data pipeline & EDA | `src/data/` loaders, inventory, norm stats, cache, EDA | Batch>1 all collections; finite feats; tests green | ✅ **DONE + signed off** (APPROVE-WITH-CHANGES; all 4 changes applied) |
-| **P2** Tile baseline | CV, OPA, hinge/ListMLE, small GNN, first submission | GNN valid-OPA ≥ 0.70 and ≥ trivial+0.10; valid tile submission by one command | 🔶 **IN PROGRESS** — brief approved, implementation next |
-| **P3** Layout at scale | Config shards, Graph Segment Training, 4 layout models, full 5-collection submission | No OOM; beats trivial per collection; LB score | ⬜ blocked by P2 |
+| **P2** Tile baseline | CV, OPA, hinge/ListMLE, small GNN, first submission | GNN valid-OPA ≥ 0.70 and ≥ trivial+0.10; valid tile submission by one command | ✅ **DONE + signed off** (APPROVE-WITH-CHANGES; required change applied). ListMLE **0.8780** valid OPA (full-config apples-to-apples **0.8794** vs trivial 0.7090); hinge 0.8757; 5-fold CV 0.8636±0.0060, fold-0 rerun exact; one-command 844-row submission validated |
+| **P3** Layout at scale | Config shards, Graph Segment Training, 4 layout models, full 5-collection submission | No OOM; beats trivial per collection; LB score | 🔶 **STARTED** — brief being drafted by tpu-phase3-layout; int8 config shards building (builder verified vs streaming reader) |
 | **P4** Quality push | Top-solution research, features, SAGE/GAT/GPS ladder | Meaningful CV gain on layout | ⬜ blocked by P3 |
 | **P5** Tuning & ensembling | HP search, rank-averaging ensembles, CV↔LB hardening | Ensemble > best single on CV **and** LB | ⬜ blocked by P4 |
 | **P6** Finalise | Reproducibility pass, report, figures | One-command repro; report done | ⬜ |

@@ -11,6 +11,7 @@ import numpy as np
 import torch
 
 from src.data.cache import read_bundle
+from src.data.graph import _to_edge_index
 from src.data.normalize import NodeFeatNormalizer
 
 
@@ -26,12 +27,11 @@ def score_all_configs(model, file_path: str, normalizer: NodeFeatNormalizer,
                         dtype=torch.float32, device=device)
     op = torch.as_tensor(np.ascontiguousarray(bundle["node_opcode"]),
                          dtype=torch.long, device=device)
-    edge = np.asarray(bundle["edge_index"])
-    if edge.shape[1] == 2 and edge.shape[0] != 2:
-        edge = edge.T
-    ei = torch.as_tensor(np.ascontiguousarray(edge), dtype=torch.long, device=device)
-    if add_reverse_edges and ei.numel():
-        ei = torch.cat([ei, ei.flip(0)], dim=1)
+    # Single source of truth for edge conventions (transpose/bounds/reverse):
+    # src.data.graph._to_edge_index — never re-implement this logic (P2 review).
+    ei = _to_edge_index(bundle["edge_index"], int(x.shape[0]),
+                        add_reverse_edges=add_reverse_edges,
+                        add_self_loops=False).to(device)
     batch_vec = torch.zeros(x.shape[0], dtype=torch.long, device=device)
 
     model.eval()

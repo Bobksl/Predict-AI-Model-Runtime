@@ -27,3 +27,4 @@ Thumbs.db
 
 # Keep empty scaffold dirs
 !**/.gitkeep
+artifacts/*.log

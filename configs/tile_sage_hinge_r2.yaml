@@ -1,0 +1,33 @@
+run_name: tile_sage_hinge_r2
+seed: 0
+data:
+  collection: tile:xla
+  k_configs: 16
+  batch_size: 64
+  num_workers: 2
+  add_reverse_edges: true
+  normalizer: artifacts/norm_stats.json
+  cache_dir: data/cache/tile
+  limit_files: null
+model:
+  type: tile_sage
+  opcode_emb_dim: 32
+  hidden_dim: 64
+  n_layers: 3
+  config_proj_dim: 32
+  dropout: 0.1
+loss:
+  type: pairwise_hinge
+  margin: 0.1
+optim:
+  lr: 1.0e-3
+  weight_decay: 0.0
+  clip_norm: 0.5
+train:
+  max_epochs: 50
+  early_stop_patience: 5
+cv:
+  enabled: false
+  n_folds: 5
+  fold: 0
+  seed: 0
