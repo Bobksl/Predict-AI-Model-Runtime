@@ -9,6 +9,8 @@ from .metrics import opa, opa_from_batch
 from .losses import pairwise_hinge_loss, listmle_loss
 from .cv import make_fold_files
 from .train_loop import train_from_config
+from .gst import gst_forward, select_gst_window
 
 __all__ = ["opa", "opa_from_batch", "pairwise_hinge_loss", "listmle_loss",
-           "make_fold_files", "train_from_config"]
+           "make_fold_files", "train_from_config",
+           "gst_forward", "select_gst_window"]

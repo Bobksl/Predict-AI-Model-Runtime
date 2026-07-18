@@ -1,7 +1,8 @@
 """Model registry: build models from a config dict via ``model.type``."""
 from .tile_gnn import TileRanker
+from .layout_gnn import LayoutRanker
 
-_REGISTRY = {"tile_sage": TileRanker}
+_REGISTRY = {"tile_sage": TileRanker, "layout_sage": LayoutRanker}
 
 
 def build_model(model_cfg: dict):
@@ -12,4 +13,4 @@ def build_model(model_cfg: dict):
     return _REGISTRY[typ](**kwargs)
 
 
-__all__ = ["TileRanker", "build_model"]
+__all__ = ["TileRanker", "LayoutRanker", "build_model"]

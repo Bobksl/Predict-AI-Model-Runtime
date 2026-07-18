@@ -1,0 +1,39 @@
+run_name: layout_nlp_random_sage
+seed: 0
+data:
+  collection: layout:nlp:random
+  k_configs: 16
+  batch_size: 4
+  num_workers: 0
+  add_reverse_edges: true
+  normalizer: artifacts/norm_stats.json
+  cache_dir: data/cache/layout_nlp_random
+  limit_files: null
+shards:
+  enabled: true
+  pool: 2000
+  root: data/cache/config_shards
+gst:
+  max_keep_nodes: 1000
+model:
+  type: layout_sage
+  opcode_emb_dim: 32
+  hidden_dim: 64
+  n_layers: 3
+  config_proj_dim: 64
+  dropout: 0.1
+loss:
+  type: pairwise_hinge
+  margin: 0.1
+optim:
+  lr: 1.0e-3
+  weight_decay: 0.0
+  clip_norm: 0.5
+train:
+  max_epochs: 80
+  early_stop_patience: 10
+cv:
+  enabled: false
+  n_folds: 5
+  fold: 0
+  seed: 0
