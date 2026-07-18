@@ -1,0 +1,13 @@
+{
+  "id": "bobksl/tpugraphs-layout-training",
+  "title": "TPUGraphs layout training (Phase 3)",
+  "code_file": "train_all_layout_kernel.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
+  "competition_sources": ["predict-ai-model-runtime"],
+  "dataset_sources": [],
+  "kernel_sources": []
+}

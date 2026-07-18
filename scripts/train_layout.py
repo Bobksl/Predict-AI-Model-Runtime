@@ -170,6 +170,8 @@ def main():
                     help="override data.limit_files")
     ap.add_argument("--cv_fold", type=int, default=None,
                     help="override cv.enabled=true, cv.fold=N")
+    ap.add_argument("--out_root", default="artifacts/checkpoints",
+                    help="checkpoint root (e.g. /kaggle/working/artifacts/checkpoints)")
     args = ap.parse_args()
 
     with open(args.config, "r", encoding="utf-8") as f:
@@ -189,7 +191,7 @@ def main():
         cfg["cv"]["enabled"] = True
         cfg["cv"]["fold"] = args.cv_fold
 
-    result = train_layout_from_config(cfg)
+    result = train_layout_from_config(cfg, out_root=args.out_root)
     print("\nRESULT:", result)
 
 
