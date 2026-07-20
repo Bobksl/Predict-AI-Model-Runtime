@@ -22,11 +22,11 @@ Needed from **Phase 2 GPU training** onward, and for every leaderboard probe.
    <https://www.kaggle.com/competitions/predict-ai-model-runtime> — required both for
    API data access and for **late submissions** (our only scoring mechanism; the
    contest is closed, late submissions still return a public/private LB score).
-2. 🔴 **API token INVALID (verified 2026-07-19):** the saved
-   `C:\Users\user\.kaggle\kaggle.json` returns HTTP 401 from Kaggle's API — the key
-   was likely revoked or mis-saved. **Regenerate:** Kaggle → Settings → API →
-   *Create New Token* → overwrite `C:\Users\user\.kaggle\kaggle.json`. Until then
-   the CLI cannot push kernels or submit.
+2. ✅ **API token WORKING (2026-07-19):** new-format `KGAT_` token verified (Bearer
+   HTTP 200). Note for the CLI (kaggle 2.x): the token must also live in
+   `C:\Users\user\.kaggle\access_token` (done) — `kaggle.json` alone is not read for
+   KGAT tokens; env vars `KAGGLE_USERNAME`/`KAGGLE_KEY` also work. Since the token
+   was pasted in chat, consider rotating it after the project wraps.
    **GPU training is ready regardless:** the kernel package lives in `kaggle/`.
    - *With a valid token:* `cd kaggle && py -3.14 -m kaggle kernels push -p .`
    - *Manual (no API needed):* kaggle.com → Create → Notebook → File > Import
