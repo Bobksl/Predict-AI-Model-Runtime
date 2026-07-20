@@ -48,8 +48,27 @@ def main():
     print("torch", torch.__version__, "cuda:", torch.cuda.is_available(),
           torch.cuda.get_device_name(0) if torch.cuda.is_available() else "", flush=True)
 
+    # 1b. locate the competition data; fall back to kagglehub download if the
+    # competition attach did not mount anything under /kaggle/input.
+    kin = Path("/kaggle/input")
+    print("/kaggle/input contents:", sorted(p.name for p in kin.iterdir()) if kin.exists() else "MISSING", flush=True)
+    from src.data.paths import resolve_data_root
+    try:
+        root = resolve_data_root()
+    except FileNotFoundError:
+        print("No mounted data root - downloading via kagglehub ...", flush=True)
+        import kagglehub
+        dl = Path(kagglehub.competition_download("predict-ai-model-runtime"))
+        print("kagglehub path:", dl, flush=True)
+        # the archive root should contain npz_all/npz/{tile,layout}
+        cand = [dl / "npz_all" / "npz", dl / "npz", dl]
+        root = next(p for p in cand if (p / "layout").is_dir() or (p / "tile").is_dir())
+    os.environ["TPUGRAPHS_DATA_ROOT"] = str(root)
+    print("DATA ROOT:", root, flush=True)
+
     # 2. shards (built once into /kaggle/working; reused on session restart)
-    sh(f"{sys.executable} scripts/make_config_shards.py --out_root {SHARDS}")
+    sh(f"{sys.executable} scripts/make_config_shards.py --out_root {SHARDS}",
+       env={**os.environ})
 
     # 3. patched configs -> /kaggle/working/configs
     kcfg_dir = WORK / "configs"
