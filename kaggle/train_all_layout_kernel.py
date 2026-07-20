@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Kaggle GPU kernel: train all 4 layout collections (Phase 3).
+"""Kaggle GPU kernel: train all 4 layout collections (Phase 3). v3
 
 Runs AS-IS in a Kaggle notebook/script kernel with:
   - Accelerator: GPU (T4/P100)   - Internet: ON

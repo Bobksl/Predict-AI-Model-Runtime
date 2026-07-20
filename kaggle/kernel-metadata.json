@@ -1,5 +1,5 @@
 {
-  "id": "bobksl/tpugraphs-layout-training",
+  "id": "bobksl/tpugraphs-layout-training-phase-3",
   "title": "TPUGraphs layout training (Phase 3)",
   "code_file": "train_all_layout_kernel.py",
   "language": "python",
