@@ -30,6 +30,8 @@ SPLITS: List[str] = ["train", "valid", "test"]
 # Candidate data roots (each should directly contain ``tile/`` and ``layout/``).
 _CANDIDATE_ROOTS = [
     "data/npz/tpugraphs",
+    # current Kaggle mount layout (verified 2026-07-19 via kagglehub fallback)
+    "/kaggle/input/competitions/predict-ai-model-runtime/npz_all/npz",
     "/kaggle/input/predict-ai-model-runtime/npz/tpugraphs",
     "/kaggle/input/predict-ai-model-runtime/npz_all/npz",
     "/kaggle/input/predict-ai-model-runtime/npz",

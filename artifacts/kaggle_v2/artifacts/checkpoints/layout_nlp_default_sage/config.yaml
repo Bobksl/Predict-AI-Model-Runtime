@@ -1,0 +1,39 @@
+cv:
+  enabled: false
+  fold: 0
+  n_folds: 5
+  seed: 0
+data:
+  add_reverse_edges: true
+  batch_size: 4
+  cache_dir: /kaggle/working/cache/layout_nlp_default
+  collection: layout:nlp:default
+  k_configs: 16
+  limit_files: null
+  normalizer: artifacts/norm_stats.json
+  num_workers: 2
+gst:
+  max_keep_nodes: 1000
+loss:
+  margin: 0.1
+  type: pairwise_hinge
+model:
+  config_proj_dim: 64
+  dropout: 0.1
+  hidden_dim: 64
+  n_layers: 3
+  opcode_emb_dim: 32
+  type: layout_sage
+optim:
+  clip_norm: 0.5
+  lr: 0.001
+  weight_decay: 0.0
+run_name: layout_nlp_default_sage
+seed: 0
+shards:
+  enabled: true
+  pool: 2000
+  root: /kaggle/working/config_shards
+train:
+  early_stop_patience: 10
+  max_epochs: 80

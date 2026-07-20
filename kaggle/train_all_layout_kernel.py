@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Kaggle GPU kernel: train all 4 layout collections (Phase 3). v3
+"""Kaggle GPU kernel: train all 4 layout collections (Phase 3). v4
 
 Runs AS-IS in a Kaggle notebook/script kernel with:
   - Accelerator: GPU (T4/P100)   - Internet: ON
@@ -36,7 +36,17 @@ def sh(cmd, **kw):
 
 
 def main():
-    # 1. deps + code
+    # 1. deps + code.
+    # Kaggle may assign a P100 (sm_60); recent torch builds (cu126/cu128) ship no
+    # sm_60 kernels -> "no kernel image is available". Detect and downgrade to a
+    # cu118 build (which retains sm_60) BEFORE anything imports torch.
+    import torch as _t
+    cap = _t.cuda.get_device_capability(0) if _t.cuda.is_available() else (0, 0)
+    print("GPU capability:", cap, flush=True)
+    if _t.cuda.is_available() and cap[0] < 7:
+        del _t
+        sh(f"{sys.executable} -m pip install --quiet torch==2.4.0 "
+           f"--index-url https://download.pytorch.org/whl/cu118")
     sh(f"{sys.executable} -m pip install --quiet torch-geometric pyyaml")
     if not REPO_DIR.exists():
         sh(f"git clone --depth 1 {REPO} {REPO_DIR}")
