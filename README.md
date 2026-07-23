@@ -1,68 +1,70 @@
-# Predict AI Model Runtime — TPUGraphs (solo GNN restart)
+# Predict AI Model Runtime — TPUGraphs (GNN learning-to-rank)
 
-A clean restart of the Kaggle competition
+A PyTorch + PyTorch Geometric solution to the Kaggle competition
 [**Google – Fast or Slow? Predict AI Model Runtime**](https://www.kaggle.com/competitions/predict-ai-model-runtime/).
-The task is **graph learning-to-rank**: for each neural-network computation graph, rank its
-candidate compiler configurations from fastest to slowest. The competitive approach is a
-**Graph Neural Network (GNN)** — this repo is organised around building one.
 
-## Start here
+**The task.** Each example is a TPU/XLA neural-network **computation graph** carrying many
+candidate **compiler configurations**. For every graph we must **rank its configurations
+from fastest to slowest** — a graph learning-to-rank problem, not runtime regression. The
+five collections are `tile:xla` and `layout:{xla,nlp}:{random,default}`; layout dominates the
+overall score.
 
-| Document | What it is |
-|---|---|
-| **[`WORKFLOW.pdf`](WORKFLOW.pdf)** | The quality-first, phase-gated project plan (P0→P6). Read first. |
-| **[`STUDY_GUIDE.pdf`](STUDY_GUIDE.pdf)** | In-depth theory companion (ranking, graphs, GNNs, scaling, dataset). |
-| [`docs/DATA_STRUCTURE.md`](docs/DATA_STRUCTURE.md) | Exact NPZ schema, verified by inspection. |
-| [`docs/USER_GUIDELINE.md`](docs/USER_GUIDELINE.md) | Original dataset-handling notes (reference). |
+**The approach.** A small **Graph Neural Network** ranker (SAGEConv message passing over the
+op graph, op-code embeddings, per-configuration scoring) trained with **pairwise-hinge /
+ListMLE** ranking losses and evaluated with **Ordered-Pair Accuracy (OPA)**. Layout graphs
+reach tens of thousands of nodes, so training uses **Graph Segment Training** and a
+memory-safe streaming/sharded config reader.
 
 ## Repository layout
 
 ```
-data/        downloaded NPZ (never edited by code; partial — see note below)
-docs/        dataset references + docs/src/ (markdown sources + build_pdf.py)
-notebooks/   official TF-GNN starter + future EDA notebooks
-src/         GNN code — data/ features/ models/ training/ inference/ utils/  (scaffold)
-configs/     one YAML per experiment              scripts/   CLI entrypoints
-artifacts/   figures/ checkpoints/ submissions/   tests/     pytest
-archive/     original team scripts + the older "ref" toolkit (reference only)
+src/
+  data/        NPZ loaders, inventory, streaming config reader, PyG batching,
+               train-only normalisation, cache, config shards, grouped CV
+  models/      TileRanker + LayoutRanker (SAGEConv GNN rankers)
+  training/    OPA metric, pairwise-hinge & ListMLE losses, GST, train loop
+  inference/   chunked all-config scoring + submission assembly
+configs/       one YAML per experiment (tile_*, layout_*)
+scripts/       CLIs: make_inventory, make_config_shards, fit_norm, train,
+               train_layout, predict, make_submission, combine_submission, eval_*
+notebooks/     01_eda.ipynb, kaggle_submission.ipynb (produces submission.csv)
+kaggle/        GPU training kernel (train_all_layout_kernel.py)
+tests/         pytest suite (data pipeline, metrics, losses, model, submission)
+artifacts/     norm_stats.json + generated figures/checkpoints/submissions
+data/          downloaded NPZ (not committed; see below)
 ```
 
-## Agent team
+## Quick start
 
-Research is supported by a 5-agent planning team (definitions in `.claude/agents/`,
-shared contract in [`docs/TEAM.md`](docs/TEAM.md)): `tpu-phase1-data`,
-`tpu-phase2-baseline`, `tpu-phase3-layout`, `tpu-phase4-quality`,
-`tpu-phase5-ensemble` — one per workflow phase. Agents plan, analyse, and review;
-the **orchestrator (main session) approves and implements**. Agents never write repo
-files, train, or submit.
+```bash
+pip install -r requirements.txt
+# 1. download the competition data (Kaggle CLI; needs competition rules accepted)
+kaggle competitions download -c predict-ai-model-runtime
+# 2. build inventory + train-only normalisation stats
+python scripts/make_inventory.py
+python scripts/fit_norm.py
+# 3. train the tile baseline (CPU-feasible; tile graphs are small)
+python scripts/train.py --config configs/tile_sage_listmle.yaml
+# 4. layout models need a GPU — see kaggle/ and notebooks/kaggle_submission.ipynb
+pytest -q tests/          # 33 tests
+```
 
-## Status
+## Results so far
 
-- **Done:** competition understood; folder cleaned and restructured; `WORKFLOW.pdf` and
-  `STUDY_GUIDE.pdf` produced.
-- **Decisions:** pivot to a **GNN** ranker; framework leaning **PyTorch + PyTorch Geometric**
-  (finalised in workflow Phase 0); tackle **`tile:xla` first, then layout**.
-- **Data:** all five collections present on disk (~7.2k tile + ~660 layout graphs).
-- **Next:** Phase 1 — build the NPZ inventory and correct, cached, variable-size graph
-  loaders in `src/data/` (this is the data-loading stage).
+- **`tile:xla`** — GNN ranker validation **OPA ≈ 0.878** (ListMLE) vs 0.709 best trivial
+  baseline; 5-fold grouped CV 0.864 ± 0.006, exactly reproducible.
+- **`layout:*`** — models trained on GPU via `kaggle/train_all_layout_kernel.py` (Graph
+  Segment Training); combined 5-collection submission built by
+  `notebooks/kaggle_submission.ipynb`.
+
+## Submitting on Kaggle
+
+`notebooks/kaggle_submission.ipynb` loads the trained checkpoints, runs inference on all five
+test collections, and writes `submission.csv` for the competition. Full step-by-step
+instructions are in that notebook's header.
 
 ## Data note
 
-**All five collections are present** under `data/` — `tile/xla`,
-`layout/nlp/{random,default}`, and `layout/xla/{random,default}`. Phase 0 of the workflow
-runs an integrity audit (file counts, schema hashes, finite-value checks). If you ever need a
-fresh copy:
-
-```
-kaggle competitions download -c predict-ai-model-runtime
-```
-
-## Rebuilding the PDFs
-
-The two PDFs are generated from Markdown in `docs/src/` (math via MathJax, rendered through
-headless Chrome):
-
-```
-python docs/src/build_pdf.py docs/src/workflow.md    WORKFLOW.pdf    "Project Workflow — Quality-First GNN Restart"
-python docs/src/build_pdf.py docs/src/study_guide.md STUDY_GUIDE.pdf "Competition Study Guide"
-```
+Data is not committed. All five collections come from the competition download; loaders
+resolve the data root automatically for a local checkout or the Kaggle mount
+(`src/data/paths.py`). Runtimes are an **ordering signal only** — never rescaled or clipped.

@@ -33,3 +33,10 @@ artifacts/*.log
 artifacts/kaggle_out*/
 artifacts/kaggle_v2/
 artifacts/kernel_meta/
+
+# ---- Internal-only (kept on disk, not in the public repo) ----
+docs/
+.claude/
+PROGRESS.MD
+SETUP.MD
+archive/
