@@ -59,9 +59,23 @@ pytest -q tests/          # 33 tests
 
 ## Submitting on Kaggle
 
-`notebooks/kaggle_submission.ipynb` loads the trained checkpoints, runs inference on all five
-test collections, and writes `submission.csv` for the competition. Full step-by-step
-instructions are in that notebook's header.
+With all five checkpoints under `artifacts/checkpoints/`, build the combined CSV and submit
+it with the Kaggle CLI (the submission is a **CSV**, not a model file):
+
+```bash
+python scripts/make_submission.py --checkpoint artifacts/checkpoints/tile_sage_listmle/best.pt \
+    --out artifacts/submissions/submission_tile.csv
+for c in xla_random xla_default nlp_random nlp_default; do
+  python scripts/make_layout_submission.py \
+    --checkpoint artifacts/checkpoints/layout_${c}_sage/best.pt \
+    --out artifacts/submissions/submission_layout_${c}.csv
+done
+python scripts/combine_submission.py \
+    --inputs artifacts/submissions/submission_tile.csv artifacts/submissions/submission_layout_*.csv \
+    --out artifacts/submissions/submission_5col.csv
+kaggle competitions submit -c predict-ai-model-runtime \
+    -f artifacts/submissions/submission_5col.csv -m "GNN 5-collection late submission"
+```
 
 ## Data note
 
