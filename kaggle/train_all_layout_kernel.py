@@ -12,7 +12,7 @@ Environment lesson (v1-v4): Kaggle's default torch 2.10+cu128 (a) has NO sm_60
 kernels for the P100 Kaggle often assigns and (b) breaks torch-geometric's dynamo
 guards. Fix: pin torch 2.4.1+cu118 (has sm_60/sm_75) + torch-geometric 2.6.1, and
 NEVER import torch in this parent process (its sys.modules would cache the stale
-build) — all torch work happens in fresh subprocesses.
+build) -- all torch work happens in fresh subprocesses.
 """
 import os
 import subprocess
