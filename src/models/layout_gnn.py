@@ -62,7 +62,8 @@ class LayoutRanker(nn.Module):
     def __init__(self, opcode_emb_dim: int = 32, hidden_dim: int = 64,
                  n_layers: int = 3, config_proj_dim: Optional[int] = None,
                  dropout: float = 0.1, node_feat_dim: int = 140,
-                 config_feat_dim: int = 18):
+                 config_feat_dim: int = 18, config_encoder: str = "linear",
+                 use_config_attn: bool = False, attn_heads: int = 4):
         super().__init__()
         config_proj_dim = config_proj_dim or hidden_dim
         if config_proj_dim != hidden_dim:
@@ -72,10 +73,24 @@ class LayoutRanker(nn.Module):
         self.hidden_dim = hidden_dim
         self.op_emb = nn.Embedding(OPCODE_VOCAB, opcode_emb_dim)
         self.node_proj = nn.Linear(node_feat_dim + opcode_emb_dim, hidden_dim)
-        self.config_proj = nn.Linear(config_feat_dim, config_proj_dim)
+        # Config encoder (P4 #3): "linear" (Phase-3) or a 2-layer "mlp".
+        if config_encoder == "mlp":
+            self.config_proj = nn.Sequential(
+                nn.Linear(config_feat_dim, hidden_dim), nn.ReLU(),
+                nn.Linear(hidden_dim, hidden_dim))
+        else:
+            self.config_proj = nn.Linear(config_feat_dim, config_proj_dim)
         self.convs = nn.ModuleList(
             [SAGEConv(hidden_dim, hidden_dim) for _ in range(n_layers)])
         self.dropout = nn.Dropout(dropout)
+        # Cross-configuration attention (P4 #2): configs of a graph attend to each
+        # other on the pooled [B,k,H] tensor before scoring — "comparing configs is
+        # easier than predicting absolute runtime" (TGraph, arXiv:2405.16623).
+        self.use_config_attn = use_config_attn
+        if use_config_attn:
+            self.config_attn = nn.TransformerEncoderLayer(
+                d_model=hidden_dim, nhead=attn_heads,
+                dim_feedforward=2 * hidden_dim, dropout=dropout, batch_first=True)
         self.head = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim), nn.ReLU(), nn.Linear(hidden_dim, 1))
 
@@ -138,9 +153,11 @@ class LayoutRanker(nn.Module):
 
         full_pool = _pool(x, batch_vec)                             # [B*k, H]
         cfg_pool = _pool(x[cfg_node_index], batch_vec[cfg_node_index])  # [B*k, H]
-        pooled = full_pool + cfg_pool
-        scores = self.head(pooled).squeeze(-1)                      # [B*k]
-        return scores.view(num_graphs, k_)
+        pooled = (full_pool + cfg_pool).view(num_graphs, k_, H)     # [B,k,H]
+        if self.use_config_attn:
+            # configs of a graph attend to each other along the k axis
+            pooled = self.config_attn(pooled)                       # [B,k,H]
+        return self.head(pooled).squeeze(-1)                        # [B,k]
 
     # ---- training / eval forward -----------------------------------------
     def forward(self, batch, gst: bool = False, max_keep_nodes: Optional[int] = None,

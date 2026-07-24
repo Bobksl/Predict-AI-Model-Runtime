@@ -42,6 +42,8 @@ def main():
     ap.add_argument("--k_configs", type=int, default=None)
     ap.add_argument("--loss", default=None)
     ap.add_argument("--hidden_dim", type=int, default=None)
+    ap.add_argument("--config_encoder", default=None, choices=[None, "linear", "mlp"])
+    ap.add_argument("--use_config_attn", action="store_true")
     ap.add_argument("--max_epochs", type=int, default=None)
     ap.add_argument("--limit_files", type=int, default=None)   # smoke
     ap.add_argument("--shards_root", default=None)
@@ -61,6 +63,11 @@ def main():
         cfg["loss"]["type"] = args.loss
     if args.hidden_dim is not None:
         cfg["model"]["hidden_dim"] = args.hidden_dim
+        cfg["model"]["config_proj_dim"] = args.hidden_dim   # must match hidden_dim
+    if args.config_encoder is not None:
+        cfg["model"]["config_encoder"] = args.config_encoder
+    if args.use_config_attn:
+        cfg["model"]["use_config_attn"] = True
     if args.max_epochs is not None:
         cfg["train"]["max_epochs"] = args.max_epochs
     if args.limit_files is not None:
